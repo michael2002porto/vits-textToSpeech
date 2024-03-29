@@ -14,6 +14,7 @@ import commons
 import utils
 import argparse
 import subprocess
+import wave
 from data_utils import TextAudioLoader, TextAudioCollate, TextAudioSpeakerLoader, TextAudioSpeakerCollate
 from models import SynthesizerTrn
 from scipy.io.wavfile import write
@@ -143,3 +144,15 @@ with torch.no_grad():
 
 print(f"Generated audio") 
 Audio(hyp, rate=hps.data.sampling_rate)
+
+# Convert audio data to integers (assuming 16-bit depth)
+audio_data = (hyp * 32767).astype(np.int16)
+
+# Save audio to WAV file
+with wave.open("generated_audio.wav", "wb") as wav_file:
+    wav_file.setnchannels(1)  # Mono audio
+    wav_file.setsampwidth(2)  # 16-bit audio (2 bytes per sample)
+    wav_file.setframerate(hps.data.sampling_rate)  # Set sample rate
+    wav_file.writeframes(audio_data.tobytes())
+
+print(f"Generated audio saved to generated_audio.wav")
