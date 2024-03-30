@@ -129,9 +129,14 @@ _ = utils.load_checkpoint(g_pth, net_g, None)
 
 
 
-txt = "Tes. halo nama saya michael"
+txt = "Liputan6 . com , Jakarta : Presiden Susilo Bambang Yudhoyono menekankan bahwa tantangan terbesar yang dihadapi bangsa-bangsa Asia dan Afrika saat ini adalah masalah kemiskinan yang sangat buruk .Yudhoyono berharap masalah ini menjadi pembahasan penting dalam Konferensi Tingkat Tinggi Asia-Afrika .Demikian pidato Yudhoyono saat membuka KTT Asia-Afrika di Jakarta Convention Centre , Jakarta , Jumat ( 22/4 )"
 
 print(f"text: {txt}")
+
+# Convert full stop (.) & comma (,) to character in vocab.txt
+txt = txt.replace(".", " _ ")
+txt = txt.replace(",", " - ")
+
 txt = preprocess_text(txt, text_mapper, hps, lang=LANG)
 stn_tst = text_mapper.get_text(txt, hps)
 with torch.no_grad():
