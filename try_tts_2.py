@@ -18,12 +18,13 @@ import wave
 from data_utils import TextAudioLoader, TextAudioCollate, TextAudioSpeakerLoader, TextAudioSpeakerCollate
 from models import SynthesizerTrn
 from scipy.io.wavfile import write
+import soundfile as sf
 
 def preprocess_char(text, lang=None):
     """
     Special treatement of characters in certain languages
     """
-    print(lang)
+    # print(lang)
     if lang == 'ron':
         text = text.replace("ț", "ţ")
     return text
@@ -78,7 +79,7 @@ class TextMapper(object):
     def filter_oov(self, text):
         val_chars = self._symbol_to_id
         txt_filt = "".join(list(filter(lambda x: x in val_chars, text)))
-        print(f"text after filtering OOV: {txt_filt}")
+        # print(f"text after filtering OOV: {txt_filt}")
         return txt_filt
 
 def preprocess_text(txt, text_mapper, hps, uroman_dir=None, lang=None):
@@ -88,13 +89,13 @@ def preprocess_text(txt, text_mapper, hps, uroman_dir=None, lang=None):
         with tempfile.TemporaryDirectory() as tmp_dir:
             if uroman_dir is None:
                 cmd = f"git clone git@github.com:isi-nlp/uroman.git {tmp_dir}"
-                print(cmd)
+                # print(cmd)
                 subprocess.check_output(cmd, shell=True)
                 uroman_dir = tmp_dir
             uroman_pl = os.path.join(uroman_dir, "bin", "uroman.pl")
-            print(f"uromanize")
+            # print(f"uromanize")
             txt = text_mapper.uromanize(txt, uroman_pl)
-            print(f"uroman text: {txt}")
+            # print(f"uroman text: {txt}")
     txt = txt.lower()
     txt = text_mapper.filter_oov(txt)
     return txt
@@ -104,7 +105,7 @@ if torch.cuda.is_available():
 else:
     device = torch.device("cpu")
 
-print(f"Run inference with {device}")
+# print(f"Run inference with {device}")
 
 LANG = "ind"
 ckpt_dir = LANG
@@ -123,15 +124,16 @@ net_g.to(device)
 _ = net_g.eval()
 
 g_pth = f"{ckpt_dir}/G_100000.pth"
-print(f"load {g_pth}")
+# print(f"load {g_pth}")
 
 _ = utils.load_checkpoint(g_pth, net_g, None)
 
 
 
 txt = "Liputan6 . com , Jakarta : Presiden Susilo Bambang Yudhoyono menekankan bahwa tantangan terbesar yang dihadapi bangsa-bangsa Asia dan Afrika saat ini adalah masalah kemiskinan yang sangat buruk .Yudhoyono berharap masalah ini menjadi pembahasan penting dalam Konferensi Tingkat Tinggi Asia-Afrika .Demikian pidato Yudhoyono saat membuka KTT Asia-Afrika di Jakarta Convention Centre , Jakarta , Jumat ( 22/4 )"
+output_path = "generated_audio.mp3"
 
-print(f"text: {txt}")
+# print(f"text: {txt}")
 
 # Convert full stop (.) & comma (,) to character in vocab.txt
 txt = txt.replace(".", " _ ")
@@ -147,17 +149,19 @@ with torch.no_grad():
         noise_scale_w=0.8, length_scale=1.0
     )[0][0,0].cpu().float().numpy()
 
-print(f"Generated audio") 
-Audio(hyp, rate=hps.data.sampling_rate)
+# # Cetak ke layar ipynb
+# print(f"Generated audio")
+# Audio(hyp, rate=hps.data.sampling_rate)
 
-# Convert audio data to integers (assuming 16-bit depth)
-audio_data = (hyp * 32767).astype(np.int16)
+# # Save audio to WAV file
+# audio_data = (hyp * 32767).astype(np.int16) # Convert audio data to integers (assuming 16-bit depth)
+# with wave.open("generated_audio.wav", "wb") as wav_file:
+#     wav_file.setnchannels(1)  # Mono audio
+#     wav_file.setsampwidth(2)  # 16-bit audio (2 bytes per sample)
+#     wav_file.setframerate(hps.data.sampling_rate)  # Set sample rate
+#     wav_file.writeframes(audio_data.tobytes())
 
-# Save audio to WAV file
-with wave.open("generated_audio.wav", "wb") as wav_file:
-    wav_file.setnchannels(1)  # Mono audio
-    wav_file.setsampwidth(2)  # 16-bit audio (2 bytes per sample)
-    wav_file.setframerate(hps.data.sampling_rate)  # Set sample rate
-    wav_file.writeframes(audio_data.tobytes())
+# Save audio to MP3 file
+sf.write(output_path, hyp, hps.data.sampling_rate)
 
-print(f"Generated audio saved to generated_audio.wav")
+# print(f"Generated audio saved to {output_path}")
