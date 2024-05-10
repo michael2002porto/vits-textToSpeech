@@ -100,41 +100,43 @@ def preprocess_text(txt, text_mapper, hps, uroman_dir=None, lang=None):
     txt = text_mapper.filter_oov(txt)
     return txt
 
-if torch.cuda.is_available():
-    device = torch.device("cuda")
-else:
-    device = torch.device("cpu")
-
-# print(f"Run inference with {device}")
-
-LANG = "ind"
-ckpt_dir = LANG
-
-vocab_file = f"{ckpt_dir}/vocab.txt"
-config_file = f"{ckpt_dir}/config.json"
-assert os.path.isfile(config_file), f"{config_file} doesn't exist"
-hps = utils.get_hparams_from_file(config_file)
-text_mapper = TextMapper(vocab_file)
-net_g = SynthesizerTrn(
-    len(text_mapper.symbols),
-    hps.data.filter_length // 2 + 1,
-    hps.train.segment_size // hps.data.hop_length,
-    **hps.model)
-net_g.to(device)
-_ = net_g.eval()
-
-g_pth = f"{ckpt_dir}/G_100000.pth"
-# print(f"load {g_pth}")
-
-_ = utils.load_checkpoint(g_pth, net_g, None)
-
 
 
 # txt = "Liputan6 . com , Jakarta : Presiden Susilo Bambang Yudhoyono menekankan bahwa tantangan terbesar yang dihadapi bangsa-bangsa Asia dan Afrika saat ini adalah masalah kemiskinan yang sangat buruk .Yudhoyono berharap masalah ini menjadi pembahasan penting dalam Konferensi Tingkat Tinggi Asia-Afrika .Demikian pidato Yudhoyono saat membuka KTT Asia-Afrika di Jakarta Convention Centre , Jakarta , Jumat ( 22/4 )"
 # output_path = "generated_audio.mp3"
 
 
-def vits_tts(txt, output_path):
+def vits_tts(txt, output_path, current_dir=""):
+
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
+    # print(f"Run inference with {device}")
+
+    LANG = "ind"
+    ckpt_dir = LANG
+
+    vocab_file = f"{current_dir}{ckpt_dir}/vocab.txt"
+    config_file = f"{current_dir}{ckpt_dir}/config.json"
+    # print(config_file)
+
+    assert os.path.isfile(config_file), f"{config_file} doesn't exist"
+    hps = utils.get_hparams_from_file(config_file)
+    text_mapper = TextMapper(vocab_file)
+    net_g = SynthesizerTrn(
+        len(text_mapper.symbols),
+        hps.data.filter_length // 2 + 1,
+        hps.train.segment_size // hps.data.hop_length,
+        **hps.model)
+    net_g.to(device)
+    _ = net_g.eval()
+
+    g_pth = f"{current_dir}{ckpt_dir}/G_100000.pth"
+    # print(f"load {g_pth}")
+
+    _ = utils.load_checkpoint(g_pth, net_g, None)
 
     # print(f"text: {txt}")
 
