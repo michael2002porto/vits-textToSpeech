@@ -130,38 +130,44 @@ _ = utils.load_checkpoint(g_pth, net_g, None)
 
 
 
-txt = "Liputan6 . com , Jakarta : Presiden Susilo Bambang Yudhoyono menekankan bahwa tantangan terbesar yang dihadapi bangsa-bangsa Asia dan Afrika saat ini adalah masalah kemiskinan yang sangat buruk .Yudhoyono berharap masalah ini menjadi pembahasan penting dalam Konferensi Tingkat Tinggi Asia-Afrika .Demikian pidato Yudhoyono saat membuka KTT Asia-Afrika di Jakarta Convention Centre , Jakarta , Jumat ( 22/4 )"
-output_path = "generated_audio.mp3"
+# txt = "Liputan6 . com , Jakarta : Presiden Susilo Bambang Yudhoyono menekankan bahwa tantangan terbesar yang dihadapi bangsa-bangsa Asia dan Afrika saat ini adalah masalah kemiskinan yang sangat buruk .Yudhoyono berharap masalah ini menjadi pembahasan penting dalam Konferensi Tingkat Tinggi Asia-Afrika .Demikian pidato Yudhoyono saat membuka KTT Asia-Afrika di Jakarta Convention Centre , Jakarta , Jumat ( 22/4 )"
+# output_path = "generated_audio.mp3"
 
-# print(f"text: {txt}")
 
-# Convert full stop (.) & comma (,) to character in vocab.txt
-txt = txt.replace(".", " _ ")
-txt = txt.replace(",", " - ")
+def vits_tts(txt, output_path):
 
-txt = preprocess_text(txt, text_mapper, hps, lang=LANG)
-stn_tst = text_mapper.get_text(txt, hps)
-with torch.no_grad():
-    x_tst = stn_tst.unsqueeze(0).to(device)
-    x_tst_lengths = torch.LongTensor([stn_tst.size(0)]).to(device)
-    hyp = net_g.infer(
-        x_tst, x_tst_lengths, noise_scale=.667,
-        noise_scale_w=0.8, length_scale=1.0
-    )[0][0,0].cpu().float().numpy()
+    # print(f"text: {txt}")
 
-# # Cetak ke layar ipynb
-# print(f"Generated audio")
-# Audio(hyp, rate=hps.data.sampling_rate)
+    # Convert full stop (.) & comma (,) to character in vocab.txt
+    txt = txt.replace(".", " _ ")
+    txt = txt.replace(",", " - ")
 
-# # Save audio to WAV file
-# audio_data = (hyp * 32767).astype(np.int16) # Convert audio data to integers (assuming 16-bit depth)
-# with wave.open("generated_audio.wav", "wb") as wav_file:
-#     wav_file.setnchannels(1)  # Mono audio
-#     wav_file.setsampwidth(2)  # 16-bit audio (2 bytes per sample)
-#     wav_file.setframerate(hps.data.sampling_rate)  # Set sample rate
-#     wav_file.writeframes(audio_data.tobytes())
+    txt = preprocess_text(txt, text_mapper, hps, lang=LANG)
+    stn_tst = text_mapper.get_text(txt, hps)
+    with torch.no_grad():
+        x_tst = stn_tst.unsqueeze(0).to(device)
+        x_tst_lengths = torch.LongTensor([stn_tst.size(0)]).to(device)
+        hyp = net_g.infer(
+            x_tst, x_tst_lengths, noise_scale=.667,
+            noise_scale_w=0.8, length_scale=1.0
+        )[0][0,0].cpu().float().numpy()
 
-# Save audio to MP3 file
-sf.write(output_path, hyp, hps.data.sampling_rate)
+    # # Cetak ke layar ipynb
+    # print(f"Generated audio")
+    # Audio(hyp, rate=hps.data.sampling_rate)
 
-# print(f"Generated audio saved to {output_path}")
+    # # Save audio to WAV file
+    # audio_data = (hyp * 32767).astype(np.int16) # Convert audio data to integers (assuming 16-bit depth)
+    # with wave.open("generated_audio.wav", "wb") as wav_file:
+    #     wav_file.setnchannels(1)  # Mono audio
+    #     wav_file.setsampwidth(2)  # 16-bit audio (2 bytes per sample)
+    #     wav_file.setframerate(hps.data.sampling_rate)  # Set sample rate
+    #     wav_file.writeframes(audio_data.tobytes())
+
+    # Save audio to MP3 file
+    sf.write(output_path, hyp, hps.data.sampling_rate)
+
+    # print(f"Generated audio saved to {output_path}")
+
+
+# vits_tts(txt, output_path)
